@@ -29,7 +29,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       title: 'Conecta Globalmente',
       description: 'Conoce personas de diferentes continentes y culturas',
       icon: Icons.language,
-      gradient: [Color(0xFF f093fb), Color(0xFF f5576c)],
+      gradient: [Color(0xFFf093fb), Color(0xFFf5576c)],
     ),
     OnboardingData(
       title: 'Comparte Experiencias',
