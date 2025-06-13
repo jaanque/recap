@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'config/database_config.dart';
 import 'services/auth_service.dart';
+import 'screens/onboarding_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 
@@ -28,6 +30,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const AuthWrapper(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
@@ -41,10 +44,50 @@ class AuthWrapper extends StatefulWidget {
 
 class _AuthWrapperState extends State<AuthWrapper> {
   final _authService = AuthService();
+  bool _isLoading = true;
+  bool _shouldShowOnboarding = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkOnboardingStatus();
+  }
+
+  Future<void> _checkOnboardingStatus() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final hasCompletedOnboarding = prefs.getBool('onboarding_completed') ?? false;
+      
+      setState(() {
+        _shouldShowOnboarding = !hasCompletedOnboarding;
+        _isLoading = false;
+      });
+    } catch (e) {
+      // En caso de error, mostrar onboarding por defecto
+      setState(() {
+        _shouldShowOnboarding = true;
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Verificar estado inicial de autenticación
+    // Mostrar loading mientras se verifica el estado
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    // Si no ha completado el onboarding, mostrarlo
+    if (_shouldShowOnboarding) {
+      return const OnboardingScreen();
+    }
+
+    // Verificar estado de autenticación
     if (_authService.isAuthenticated) {
       return const HomeScreen();
     }
