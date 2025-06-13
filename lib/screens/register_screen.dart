@@ -20,6 +20,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _confirmPasswordController = TextEditingController();
   
   bool _isLoading = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   final List<Map<String, String>> _continents = [
     {'name': 'África', 'flag': '🌍'},
@@ -79,6 +81,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           const SnackBar(
             content: Text('Registro exitoso. Verifica tu email.'),
             backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
           ),
         );
         Navigator.of(context).pop();
@@ -88,6 +91,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         SnackBar(
           content: Text('Error: $error'),
           backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
         ),
       );
     } finally {
@@ -99,36 +103,50 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: _currentPage == 0 
-            ? () => Navigator.of(context).pop() 
-            : _previousPage,
-        ),
-        title: Text(
-          'Registro ${_currentPage + 1}/4',
-          style: const TextStyle(color: Colors.black, fontSize: 18),
-        ),
-        centerTitle: true,
-      ),
-      body: Center(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 400),
-          padding: const EdgeInsets.all(24),
-          child: PageView(
-            controller: _pageController,
-            onPageChanged: (index) => setState(() => _currentPage = index),
-            physics: const NeverScrollableScrollPhysics(),
-            children: [
-              _buildContinentPage(),
-              _buildEmailPage(),
-              _buildUsernamePage(),
-              _buildPasswordPage(),
-            ],
-          ),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            // Botón de retroceso
+            if (_currentPage > 0)
+              Positioned(
+                top: 20,
+                left: 20,
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.black, size: 24),
+                  onPressed: _previousPage,
+                ),
+              ),
+            
+            // Botón de cerrar (solo en la primera página)
+            if (_currentPage == 0)
+              Positioned(
+                top: 20,
+                left: 20,
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.black, size: 24),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ),
+            
+            // Contenido principal
+            Center(
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 400),
+                padding: const EdgeInsets.all(32),
+                child: PageView(
+                  controller: _pageController,
+                  onPageChanged: (index) => setState(() => _currentPage = index),
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: [
+                    _buildContinentPage(),
+                    _buildEmailPage(),
+                    _buildUsernamePage(),
+                    _buildPasswordPage(),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -138,27 +156,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
+        const SizedBox(height: 60),
         const Text(
           '¿De qué continente eres?',
           style: TextStyle(
-            fontSize: 24,
+            fontSize: 28,
             fontWeight: FontWeight.bold,
             color: Colors.black,
           ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 40),
+        const SizedBox(height: 60),
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey[300]!),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 20,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               value: _selectedContinent,
               hint: const Padding(
-                padding: EdgeInsets.all(16),
+                padding: EdgeInsets.all(20),
                 child: Text('Selecciona tu continente'),
               ),
               isExpanded: true,
@@ -166,7 +191,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 return DropdownMenuItem<String>(
                   value: continent['name'],
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(20),
                     child: Row(
                       children: [
                         Text(
@@ -186,10 +211,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 40),
-        SizedBox(
+        const SizedBox(height: 60),
+        Container(
           width: double.infinity,
-          height: 50,
+          height: 56,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: _selectedContinent != null ? [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.15),
+                blurRadius: 20,
+                offset: const Offset(0, 4),
+              ),
+            ] : [],
+          ),
           child: ElevatedButton(
             onPressed: _selectedContinent != null ? _nextPage : null,
             style: ElevatedButton.styleFrom(
@@ -197,12 +232,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
               foregroundColor: Colors.white,
               disabledBackgroundColor: Colors.grey[400],
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
               ),
+              elevation: 0,
             ),
-            child: const Text('Siguiente'),
+            child: const Text(
+              'Continuar',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
           ),
         ),
+        const SizedBox(height: 60),
       ],
     );
   }
@@ -211,21 +251,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
+        const SizedBox(height: 60),
         const Text(
           'Ingresa tu correo electrónico',
           style: TextStyle(
-            fontSize: 24,
+            fontSize: 28,
             fontWeight: FontWeight.bold,
             color: Colors.black,
           ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 40),
+        const SizedBox(height: 60),
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey[300]!),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 20,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: TextField(
             controller: _emailController,
@@ -233,15 +280,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
             onChanged: (_) => setState(() {}),
             decoration: const InputDecoration(
               hintText: 'correo@ejemplo.com',
+              hintStyle: TextStyle(color: Colors.grey),
               border: InputBorder.none,
-              contentPadding: EdgeInsets.all(16),
+              contentPadding: EdgeInsets.all(20),
             ),
           ),
         ),
-        const SizedBox(height: 40),
-        SizedBox(
+        const SizedBox(height: 60),
+        Container(
           width: double.infinity,
-          height: 50,
+          height: 56,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: (_emailController.text.isNotEmpty && 
+                _isValidEmail(_emailController.text.trim())) ? [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.15),
+                blurRadius: 20,
+                offset: const Offset(0, 4),
+              ),
+            ] : [],
+          ),
           child: ElevatedButton(
             onPressed: _emailController.text.isNotEmpty && 
                 _isValidEmail(_emailController.text.trim())
@@ -251,12 +310,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
               foregroundColor: Colors.white,
               disabledBackgroundColor: Colors.grey[400],
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
               ),
+              elevation: 0,
             ),
-            child: const Text('Siguiente'),
+            child: const Text(
+              'Continuar',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
           ),
         ),
+        const SizedBox(height: 60),
       ],
     );
   }
@@ -265,36 +329,54 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
+        const SizedBox(height: 60),
         const Text(
           'Elige tu nombre de usuario',
           style: TextStyle(
-            fontSize: 24,
+            fontSize: 28,
             fontWeight: FontWeight.bold,
             color: Colors.black,
           ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 40),
+        const SizedBox(height: 60),
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey[300]!),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 20,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: TextField(
             controller: _usernameController,
             onChanged: (_) => setState(() {}),
             decoration: const InputDecoration(
               hintText: 'nombre_usuario',
+              hintStyle: TextStyle(color: Colors.grey),
               border: InputBorder.none,
-              contentPadding: EdgeInsets.all(16),
+              contentPadding: EdgeInsets.all(20),
             ),
           ),
         ),
-        const SizedBox(height: 40),
-        SizedBox(
+        const SizedBox(height: 60),
+        Container(
           width: double.infinity,
-          height: 50,
+          height: 56,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: _usernameController.text.isNotEmpty ? [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.15),
+                blurRadius: 20,
+                offset: const Offset(0, 4),
+              ),
+            ] : [],
+          ),
           child: ElevatedButton(
             onPressed: _usernameController.text.isNotEmpty ? _nextPage : null,
             style: ElevatedButton.styleFrom(
@@ -302,12 +384,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
               foregroundColor: Colors.white,
               disabledBackgroundColor: Colors.grey[400],
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
               ),
+              elevation: 0,
             ),
-            child: const Text('Siguiente'),
+            child: const Text(
+              'Continuar',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
           ),
         ),
+        const SizedBox(height: 60),
       ],
     );
   }
@@ -316,55 +403,101 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
+        const SizedBox(height: 60),
         const Text(
           'Crea tu contraseña',
           style: TextStyle(
-            fontSize: 24,
+            fontSize: 28,
             fontWeight: FontWeight.bold,
             color: Colors.black,
           ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 40),
+        const SizedBox(height: 60),
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey[300]!),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 20,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: TextField(
             controller: _passwordController,
-            obscureText: true,
+            obscureText: _obscurePassword,
             onChanged: (_) => setState(() {}),
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               hintText: 'Contraseña',
+              hintStyle: const TextStyle(color: Colors.grey),
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                  color: Colors.grey,
+                ),
+                onPressed: () {
+                  setState(() => _obscurePassword = !_obscurePassword);
+                },
+              ),
               border: InputBorder.none,
-              contentPadding: EdgeInsets.all(16),
+              contentPadding: const EdgeInsets.all(20),
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey[300]!),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 20,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: TextField(
             controller: _confirmPasswordController,
-            obscureText: true,
+            obscureText: _obscureConfirmPassword,
             onChanged: (_) => setState(() {}),
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               hintText: 'Confirmar contraseña',
+              hintStyle: const TextStyle(color: Colors.grey),
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                  color: Colors.grey,
+                ),
+                onPressed: () {
+                  setState(() => _obscureConfirmPassword = !_obscureConfirmPassword);
+                },
+              ),
               border: InputBorder.none,
-              contentPadding: EdgeInsets.all(16),
+              contentPadding: const EdgeInsets.all(20),
             ),
           ),
         ),
-        const SizedBox(height: 40),
-        SizedBox(
+        const SizedBox(height: 60),
+        Container(
           width: double.infinity,
-          height: 50,
+          height: 56,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: (_passwordController.text.isNotEmpty && 
+                _passwordController.text.length >= 6 &&
+                _passwordController.text == _confirmPasswordController.text && 
+                !_isLoading) ? [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.15),
+                blurRadius: 20,
+                offset: const Offset(0, 4),
+              ),
+            ] : [],
+          ),
           child: ElevatedButton(
             onPressed: _passwordController.text.isNotEmpty && 
                 _passwordController.text.length >= 6 &&
@@ -376,8 +509,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
               foregroundColor: Colors.white,
               disabledBackgroundColor: Colors.grey[400],
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
               ),
+              elevation: 0,
             ),
             child: _isLoading 
                 ? const SizedBox(
@@ -388,9 +522,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
                   )
-                : const Text('Registrarse'),
+                : const Text(
+                    'Crear cuenta',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
           ),
         ),
+        const SizedBox(height: 60),
       ],
     );
   }
