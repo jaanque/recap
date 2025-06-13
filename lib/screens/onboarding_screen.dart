@@ -22,26 +22,22 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     OnboardingData(
       title: '¡Bienvenido!',
       description: 'Descubre una nueva forma de conectar con personas de todo el mundo',
-      icon: Icons.public,
-      gradient: [Color(0xFF667eea), Color(0xFF764ba2)],
+      icon: Icons.public_outlined,
     ),
     OnboardingData(
       title: 'Conecta Globalmente',
       description: 'Conoce personas de diferentes continentes y culturas',
-      icon: Icons.language,
-      gradient: [Color(0xFFf093fb), Color(0xFFf5576c)],
+      icon: Icons.language_outlined,
     ),
     OnboardingData(
       title: 'Comparte Experiencias',
       description: 'Intercambia historias y aprende de experiencias únicas',
-      icon: Icons.share,
-      gradient: [Color(0xFF4facfe), Color(0xFF00f2fe)],
+      icon: Icons.share_outlined,
     ),
     OnboardingData(
       title: 'Comunidad Segura',
       description: 'Disfruta de un entorno seguro y respetuoso para todos',
-      icon: Icons.security,
-      gradient: [Color(0xFF43e97b), Color(0xFF38f9d7)],
+      icon: Icons.security_outlined,
     ),
   ];
 
@@ -54,7 +50,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   void _initializeAnimations() {
     _progressController = AnimationController(
-      duration: const Duration(seconds: 10),
+      duration: const Duration(seconds: 8),
       vsync: this,
     );
 
@@ -77,7 +73,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   void _startTimer() {
     _progressController.forward();
     
-    _timer = Timer.periodic(const Duration(seconds: 10), (timer) {
+    _timer = Timer.periodic(const Duration(seconds: 8), (timer) {
       if (_currentIndex < _slides.length - 1) {
         _nextSlide();
       } else {
@@ -145,6 +141,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     final currentSlide = _slides[_currentIndex];
     
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       body: GestureDetector(
         onTapUp: (details) {
           final screenWidth = MediaQuery.of(context).size.width;
@@ -162,107 +159,102 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             }
           }
         },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 800),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: currentSlide.gradient,
-            ),
-          ),
-          child: SafeArea(
-            child: Column(
-              children: [
-                // Barras de progreso
-                _buildProgressBars(),
-                
-                // Botón skip
-                _buildSkipButton(),
-                
-                // Contenido principal
-                Expanded(
-                  child: _buildSlideContent(currentSlide),
-                ),
-                
-                // Indicador de navegación
-                _buildNavigationHint(),
-              ],
-            ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Header con progreso y botón skip
+              _buildHeader(),
+              
+              // Contenido principal
+              Expanded(
+                child: _buildSlideContent(currentSlide),
+              ),
+              
+              // Footer con navegación
+              _buildFooter(),
+            ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        children: [
+          // Botón skip alineado a la derecha
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: _skipOnboarding,
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.grey[600],
+                backgroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  side: BorderSide(color: Colors.grey[300]!),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              ),
+              child: const Text(
+                'Saltar',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          
+          const SizedBox(height: 20),
+          
+          // Barras de progreso
+          _buildProgressBars(),
+        ],
       ),
     );
   }
 
   Widget _buildProgressBars() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      child: Row(
-        children: List.generate(_slides.length, (index) {
-          return Expanded(
-            child: Container(
-              height: 3,
-              margin: EdgeInsets.only(right: index < _slides.length - 1 ? 8 : 0),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(2),
-              ),
-              child: index == _currentIndex
-                  ? AnimatedBuilder(
-                      animation: _progressController,
-                      builder: (context, child) {
-                        return FractionallySizedBox(
-                          alignment: Alignment.centerLeft,
-                          widthFactor: _progressController.value,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                          ),
-                        );
-                      },
-                    )
-                  : index < _currentIndex
-                      ? Container(
+    return Row(
+      children: List.generate(_slides.length, (index) {
+        return Expanded(
+          child: Container(
+            height: 4,
+            margin: EdgeInsets.only(right: index < _slides.length - 1 ? 8 : 0),
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(2),
+            ),
+            child: index == _currentIndex
+                ? AnimatedBuilder(
+                    animation: _progressController,
+                    builder: (context, child) {
+                      return FractionallySizedBox(
+                        alignment: Alignment.centerLeft,
+                        widthFactor: _progressController.value,
+                        child: Container(
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: Colors.black,
                             borderRadius: BorderRadius.circular(2),
                           ),
-                        )
-                      : const SizedBox(),
-            ),
-          );
-        }),
-      ),
-    );
-  }
-
-  Widget _buildSkipButton() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Align(
-        alignment: Alignment.centerRight,
-        child: TextButton(
-          onPressed: _skipOnboarding,
-          style: TextButton.styleFrom(
-            foregroundColor: Colors.white,
-            backgroundColor: Colors.white.withOpacity(0.2),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        ),
+                      );
+                    },
+                  )
+                : index < _currentIndex
+                    ? Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      )
+                    : const SizedBox(),
           ),
-          child: const Text(
-            'Saltar',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      ),
+        );
+      }),
     );
   }
 
@@ -274,27 +266,31 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       ).animate(_slideAnimation),
       child: FadeTransition(
         opacity: _slideAnimation,
-        child: Padding(
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 400),
           padding: const EdgeInsets.symmetric(horizontal: 40),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Icono principal
+              // Icono principal con container estilizado
               Container(
                 width: 120,
                 height: 120,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white,
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
-                    width: 2,
-                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 30,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
                 ),
                 child: Icon(
                   slide.icon,
-                  size: 60,
-                  color: Colors.white,
+                  size: 50,
+                  color: Colors.black,
                 ),
               ),
               
@@ -304,10 +300,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               Text(
                 slide.title,
                 style: const TextStyle(
-                  fontSize: 36,
+                  fontSize: 32,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  height: 1.1,
+                  color: Colors.black,
+                  height: 1.2,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -318,9 +314,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               Text(
                 slide.description,
                 style: TextStyle(
-                  fontSize: 18,
-                  color: Colors.white.withOpacity(0.9),
-                  height: 1.4,
+                  fontSize: 16,
+                  color: Colors.grey[600],
+                  height: 1.5,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -336,17 +332,17 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
+                        color: Colors.black.withOpacity(0.15),
                         blurRadius: 20,
-                        offset: const Offset(0, 8),
+                        offset: const Offset(0, 4),
                       ),
                     ],
                   ),
                   child: ElevatedButton(
                     onPressed: _navigateToLogin,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.black,
+                      backgroundColor: Colors.black,
+                      foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
@@ -368,92 +364,117 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     );
   }
 
-  Widget _buildNavigationHint() {
+  Widget _buildFooter() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(32),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Indicador izquierdo
+          // Botón anterior
           if (_currentIndex > 0)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.arrow_back_ios,
-                    size: 12,
-                    color: Colors.white.withOpacity(0.8),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Anterior',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.8),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
+            _buildNavigationButton(
+              icon: Icons.arrow_back_ios,
+              label: 'Anterior',
+              onTap: _previousSlide,
             )
           else
-            const SizedBox(),
+            const SizedBox(width: 80),
           
-          // Contador de slides
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              '${_currentIndex + 1} / ${_slides.length}',
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.8),
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
+          // Indicadores de página
+          _buildPageIndicators(),
           
-          // Indicador derecho
+          // Botón siguiente
           if (_currentIndex < _slides.length - 1)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Siguiente',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.8),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Icon(
-                    Icons.arrow_forward_ios,
-                    size: 12,
-                    color: Colors.white.withOpacity(0.8),
-                  ),
-                ],
-              ),
+            _buildNavigationButton(
+              icon: Icons.arrow_forward_ios,
+              label: 'Siguiente',
+              onTap: _nextSlide,
+              isForward: true,
             )
           else
-            const SizedBox(),
+            const SizedBox(width: 80),
         ],
       ),
+    );
+  }
+
+  Widget _buildNavigationButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    bool isForward = false,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[300]!),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: isForward
+              ? [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      color: Colors.grey[700],
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    icon,
+                    size: 12,
+                    color: Colors.grey[700],
+                  ),
+                ]
+              : [
+                  Icon(
+                    icon,
+                    size: 12,
+                    color: Colors.grey[700],
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      color: Colors.grey[700],
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPageIndicators() {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(_slides.length, (index) {
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          width: index == _currentIndex ? 24 : 8,
+          height: 8,
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          decoration: BoxDecoration(
+            color: index == _currentIndex ? Colors.black : Colors.grey[300],
+            borderRadius: BorderRadius.circular(4),
+          ),
+        );
+      }),
     );
   }
 }
@@ -462,12 +483,10 @@ class OnboardingData {
   final String title;
   final String description;
   final IconData icon;
-  final List<Color> gradient;
 
   OnboardingData({
     required this.title,
     required this.description,
     required this.icon,
-    required this.gradient,
   });
 }
