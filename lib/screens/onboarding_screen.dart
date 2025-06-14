@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'register_screen.dart';
+import 'login_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -140,6 +141,12 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     }
   }
 
+  void _goToLogin() {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -158,7 +165,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             // Contenido principal
             Positioned.fill(
               top: 80,
-              bottom: 120, // Aumentado de 100 a 120 para dar más espacio
+              bottom: 120, // Espacio para botones de navegación
               child: PageView.builder(
                 controller: _pageController,
                 onPageChanged: (index) {
@@ -173,6 +180,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 },
               ),
             ),
+            
+
             
             // Botones de navegación
             Positioned(
@@ -352,6 +361,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     );
   }
 
+
+
   Widget _buildNavigationButtons() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -384,6 +395,44 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 Icons.arrow_back_ios_new,
                 color: _currentPage > 0 ? Colors.black : Colors.grey[500],
                 size: 20,
+              ),
+            ),
+          ),
+        ),
+        
+        // Botón de login en el centro
+        GestureDetector(
+          onTap: _goToLogin,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeOutCubic,
+            width: 150,
+            height: 56,
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(
+                color: Colors.grey[300]!,
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 15,
+                  offset: const Offset(0, 6),
+                  spreadRadius: -3,
+                ),
+              ],
+            ),
+            child: const Center(
+              child: Text(
+                'Iniciar sesión',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.3,
+                ),
               ),
             ),
           ),
