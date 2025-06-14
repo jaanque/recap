@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'dart:async';
-
-// Importar las cámaras del main.dart
-import '../main.dart' show cameras;
 
 class CameraScreen extends StatefulWidget {
   const CameraScreen({super.key});
@@ -14,23 +12,72 @@ class CameraScreen extends StatefulWidget {
 
 class _CameraScreenState extends State<CameraScreen> {
   CameraController? _controller;
+  List<CameraDescription> _cameras = [];
   bool _isInitialized = false;
   bool _isRecording = false;
   bool _hasError = false;
   String _errorMessage = '';
   Timer? _recordingTimer;
   int _recordingSeconds = 0;
+  bool _permissionGranted = false;
+  bool _isLoadingPermissions = true;
 
   @override
   void initState() {
     super.initState();
-    _initializeCamera();
+    _requestPermissionsAndInitialize();
   }
 
-  Future<void> _initializeCamera() async {
+  Future<void> _requestPermissionsAndInitialize() async {
     try {
-      // Verificar si tenemos cámaras disponibles
-      if (cameras.isEmpty) {
+      // Solicitar permisos de cámara y micrófono
+      final cameraStatus = await Permission.camera.request();
+      final microphoneStatus = await Permission.microphone.request();
+
+      if (cameraStatus.isGranted && microphoneStatus.isGranted) {
+        setState(() {
+          _permissionGranted = true;
+          _isLoadingPermissions = false;
+        });
+        await _initializeCameras();
+      } else {
+        setState(() {
+          _permissionGranted = false;
+          _isLoadingPermissions = false;
+          _hasError = true;
+          _errorMessage = _getPermissionErrorMessage(cameraStatus, microphoneStatus);
+        });
+      }
+    } catch (e) {
+      print('Error solicitando permisos: $e');
+      setState(() {
+        _isLoadingPermissions = false;
+        _hasError = true;
+        _errorMessage = 'Error solicitando permisos: ${e.toString()}';
+      });
+    }
+  }
+
+  String _getPermissionErrorMessage(PermissionStatus cameraStatus, PermissionStatus microphoneStatus) {
+    if (cameraStatus.isDenied && microphoneStatus.isDenied) {
+      return 'Se necesitan permisos de cámara y micrófono para usar esta función.';
+    } else if (cameraStatus.isDenied) {
+      return 'Se necesita permiso de cámara para usar esta función.';
+    } else if (microphoneStatus.isDenied) {
+      return 'Se necesita permiso de micrófono para grabar videos con audio.';
+    } else if (cameraStatus.isPermanentlyDenied || microphoneStatus.isPermanentlyDenied) {
+      return 'Los permisos fueron denegados permanentemente. Ve a configuración para habilitarlos.';
+    }
+    return 'No se pudieron obtener los permisos necesarios.';
+  }
+
+  Future<void> _initializeCameras() async {
+    try {
+      // Obtener cámaras disponibles
+      _cameras = await availableCameras();
+      print('Cámaras encontradas: ${_cameras.length}');
+
+      if (_cameras.isEmpty) {
         setState(() {
           _hasError = true;
           _errorMessage = 'No se encontraron cámaras disponibles en el dispositivo.';
@@ -39,8 +86,22 @@ class _CameraScreenState extends State<CameraScreen> {
       }
 
       // Inicializar el controlador con la primera cámara
+      await _initializeCamera(_cameras[0]);
+    } catch (e) {
+      print('Error inicializando cámaras: $e');
+      if (mounted) {
+        setState(() {
+          _hasError = true;
+          _errorMessage = 'Error inicializando cámaras: ${e.toString()}';
+        });
+      }
+    }
+  }
+
+  Future<void> _initializeCamera(CameraDescription camera) async {
+    try {
       _controller = CameraController(
-        cameras[0], // Usar la primera cámara (generalmente la trasera)
+        camera,
         ResolutionPreset.high,
         enableAudio: true,
       );
@@ -72,21 +133,14 @@ class _CameraScreenState extends State<CameraScreen> {
   }
 
   void _switchCamera() async {
-    if (cameras.length <= 1) return;
+    if (_cameras.length <= 1) return;
     
     try {
-      final currentIndex = cameras.indexOf(_controller!.description);
-      final nextIndex = (currentIndex + 1) % cameras.length;
+      final currentIndex = _cameras.indexOf(_controller!.description);
+      final nextIndex = (currentIndex + 1) % _cameras.length;
       
       await _controller!.dispose();
-      
-      _controller = CameraController(
-        cameras[nextIndex],
-        ResolutionPreset.high,
-        enableAudio: true,
-      );
-      
-      await _controller!.initialize();
+      await _initializeCamera(_cameras[nextIndex]);
       
       if (mounted) {
         setState(() {});
@@ -166,6 +220,107 @@ class _CameraScreenState extends State<CameraScreen> {
     return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 
+  Widget _buildPermissionScreen() {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header con botón de cerrar
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => Navigator.of(context).pop(),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.3),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Contenido de permisos centrado
+            Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      _permissionGranted ? Icons.camera_alt : Icons.camera_alt_outlined,
+                      color: _permissionGranted ? Colors.green : Colors.orange,
+                      size: 80,
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      _permissionGranted ? 'Permisos Concedidos' : 'Permisos Necesarios',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                      child: Text(
+                        _hasError ? _errorMessage : 'Se necesitan permisos de cámara y micrófono para usar esta función.',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 16,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    if (!_permissionGranted) ...[
+                      ElevatedButton(
+                        onPressed: () async {
+                          setState(() {
+                            _isLoadingPermissions = true;
+                            _hasError = false;
+                          });
+                          await _requestPermissionsAndInitialize();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.black,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
+                        ),
+                        child: const Text('Solicitar Permisos'),
+                      ),
+                      const SizedBox(height: 12),
+                      TextButton(
+                        onPressed: () => openAppSettings(),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.white70,
+                        ),
+                        child: const Text('Abrir Configuración'),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildErrorScreen() {
     return Scaffold(
       backgroundColor: Colors.black,
@@ -203,7 +358,7 @@ class _CameraScreenState extends State<CameraScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Icon(
-                      Icons.camera_alt_outlined,
+                      Icons.error_outline,
                       color: Colors.red,
                       size: 80,
                     ),
@@ -234,8 +389,9 @@ class _CameraScreenState extends State<CameraScreen> {
                         setState(() {
                           _hasError = false;
                           _errorMessage = '';
+                          _isLoadingPermissions = true;
                         });
-                        _initializeCamera();
+                        _requestPermissionsAndInitialize();
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
@@ -298,9 +454,11 @@ class _CameraScreenState extends State<CameraScreen> {
                       strokeWidth: 3,
                     ),
                     const SizedBox(height: 24),
-                    const Text(
-                      'Inicializando cámara...',
-                      style: TextStyle(
+                    Text(
+                      _isLoadingPermissions 
+                          ? 'Solicitando permisos...' 
+                          : 'Inicializando cámara...',
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18,
                       ),
@@ -317,14 +475,27 @@ class _CameraScreenState extends State<CameraScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Mostrar pantalla de carga mientras se solicitan permisos
+    if (_isLoadingPermissions) {
+      return _buildLoadingScreen();
+    }
+
+    // Mostrar pantalla de permisos si no se han concedido
+    if (!_permissionGranted) {
+      return _buildPermissionScreen();
+    }
+
+    // Mostrar pantalla de error si hay algún problema
     if (_hasError) {
       return _buildErrorScreen();
     }
 
+    // Mostrar pantalla de carga mientras se inicializa la cámara
     if (!_isInitialized || _controller == null) {
       return _buildLoadingScreen();
     }
 
+    // Pantalla principal de la cámara
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
@@ -394,7 +565,6 @@ class _CameraScreenState extends State<CameraScreen> {
                 // Botón flash (lado izquierdo)
                 GestureDetector(
                   onTap: () {
-                    // Aquí puedes implementar toggle de flash
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Flash no implementado'),
@@ -460,7 +630,7 @@ class _CameraScreenState extends State<CameraScreen> {
                 
                 // Botón cambiar cámara (lado derecho)
                 GestureDetector(
-                  onTap: cameras.length > 1 ? _switchCamera : null,
+                  onTap: _cameras.length > 1 ? _switchCamera : null,
                   child: Container(
                     width: 50,
                     height: 50,
@@ -468,13 +638,13 @@ class _CameraScreenState extends State<CameraScreen> {
                       color: Colors.black.withOpacity(0.3),
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: Colors.white.withOpacity(cameras.length > 1 ? 0.3 : 0.1),
+                        color: Colors.white.withOpacity(_cameras.length > 1 ? 0.3 : 0.1),
                         width: 2,
                       ),
                     ),
                     child: Icon(
                       Icons.flip_camera_ios,
-                      color: cameras.length > 1 ? Colors.white : Colors.white38,
+                      color: _cameras.length > 1 ? Colors.white : Colors.white38,
                       size: 24,
                     ),
                   ),
