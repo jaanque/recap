@@ -77,7 +77,7 @@ class _HomeScreenState extends State<HomeScreen>
       // Obtener datos del perfil desde Supabase
       final response = await Supabase.instance.client
           .from('profiles')
-          .select('username, email, continent')
+          .select('username, email')
           .eq('id', user.id)
           .single();
       
@@ -87,7 +87,6 @@ class _HomeScreenState extends State<HomeScreen>
         'user': user,
         'displayName': username?.isNotEmpty == true ? username! : user.email?.split('@')[0] ?? 'Usuario',
         'email': user.email ?? '',
-        'continent': response['continent'] as String?,
       };
     } catch (error) {
       print('Error obteniendo datos del usuario: $error');
@@ -304,7 +303,7 @@ class _HomeScreenState extends State<HomeScreen>
                         
                         const SizedBox(height: 40),
                         
-                        // Descripción adicional con información del continente
+                        // Descripción adicional
                         SlideTransition(
                           position: Tween<Offset>(
                             begin: const Offset(0, 0.2),
@@ -323,43 +322,14 @@ class _HomeScreenState extends State<HomeScreen>
                             )),
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 20),
-                              child: Column(
-                                children: [
-                                  Text(
-                                    'Estás listo para conectar con personas increíbles de todo el mundo.',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.grey[600],
-                                      height: 1.5,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                  if (userData['continent'] != null) ...[
-                                    const SizedBox(height: 12),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                        vertical: 8,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.blue.withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(20),
-                                        border: Border.all(
-                                          color: Colors.blue.withOpacity(0.3),
-                                          width: 1,
-                                        ),
-                                      ),
-                                      child: Text(
-                                        '📍 ${userData['continent']}',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color: Colors.blue[700],
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ],
+                              child: Text(
+                                'Estás listo para conectar con personas increíbles de todo el mundo.',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey[600],
+                                  height: 1.5,
+                                ),
+                                textAlign: TextAlign.center,
                               ),
                             ),
                           ),
