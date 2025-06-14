@@ -63,6 +63,70 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
+  void _showProfileDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Perfil'),
+          content: const Text('Función de perfil próximamente disponible.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cerrar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showSettingsDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Configuración'),
+          content: const Text('Configuraciones próximamente disponibles.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cerrar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showSignOutConfirmation() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Cerrar sesión'),
+          content: const Text('¿Estás seguro de que quieres cerrar sesión?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _handleSignOut();
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.red,
+              ),
+              child: const Text('Cerrar sesión'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<Map<String, dynamic>> _getUserData() async {
     final authService = AuthService();
     final user = authService.currentUser;
@@ -136,13 +200,63 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
                 ],
               ),
-              child: IconButton(
+              child: PopupMenuButton<String>(
                 icon: const Icon(
-                  Icons.logout,
+                  Icons.more_vert,
                   color: Colors.black,
                   size: 20,
                 ),
-                onPressed: _handleSignOut,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 8,
+                offset: const Offset(0, 50),
+                onSelected: (String value) {
+                  switch (value) {
+                    case 'profile':
+                      _showProfileDialog();
+                      break;
+                    case 'settings':
+                      _showSettingsDialog();
+                      break;
+                    case 'logout':
+                      _showSignOutConfirmation();
+                      break;
+                  }
+                },
+                itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                  const PopupMenuItem<String>(
+                    value: 'profile',
+                    child: Row(
+                      children: [
+                        Icon(Icons.person_outline, size: 20),
+                        SizedBox(width: 12),
+                        Text('Perfil'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'settings',
+                    child: Row(
+                      children: [
+                        Icon(Icons.settings_outlined, size: 20),
+                        SizedBox(width: 12),
+                        Text('Configuración'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuDivider(),
+                  const PopupMenuItem<String>(
+                    value: 'logout',
+                    child: Row(
+                      children: [
+                        Icon(Icons.logout, size: 20, color: Colors.red),
+                        SizedBox(width: 12),
+                        Text('Cerrar sesión', style: TextStyle(color: Colors.red)),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
