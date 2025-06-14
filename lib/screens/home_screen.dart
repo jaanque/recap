@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/auth_service.dart';
 import 'login_screen.dart';
 import 'movie_screen.dart';
+import 'camera_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -147,41 +148,89 @@ class _HomeScreenState extends State<HomeScreen>
           ),
         ],
       ),
-      floatingActionButton: ScaleTransition(
-        scale: Tween<double>(
-          begin: 0.0,
-          end: 1.0,
-        ).animate(CurvedAnimation(
-          parent: _slideController,
-          curve: const Interval(0.8, 1.0, curve: Curves.elasticOut),
-        )),
-        child: Container(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.blue.withOpacity(0.4),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-                spreadRadius: -2,
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          // Botón de cámara
+          ScaleTransition(
+            scale: Tween<double>(
+              begin: 0.0,
+              end: 1.0,
+            ).animate(CurvedAnimation(
+              parent: _slideController,
+              curve: const Interval(0.7, 1.0, curve: Curves.elasticOut),
+            )),
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.green.withOpacity(0.4),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                    spreadRadius: -2,
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: FloatingActionButton(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => const MovieScreen()),
-              );
-            },
-            backgroundColor: Colors.blue,
-            foregroundColor: Colors.white,
-            elevation: 0,
-            child: const Icon(
-              Icons.movie,
-              size: 28,
+              child: FloatingActionButton(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => const CameraScreen()),
+                  );
+                },
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                heroTag: "camera_fab",
+                child: const Icon(
+                  Icons.camera_alt,
+                  size: 28,
+                ),
+              ),
             ),
           ),
-        ),
+          
+          const SizedBox(height: 16),
+          
+          // Botón de películas
+          ScaleTransition(
+            scale: Tween<double>(
+              begin: 0.0,
+              end: 1.0,
+            ).animate(CurvedAnimation(
+              parent: _slideController,
+              curve: const Interval(0.8, 1.0, curve: Curves.elasticOut),
+            )),
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.blue.withOpacity(0.4),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                    spreadRadius: -2,
+                  ),
+                ],
+              ),
+              child: FloatingActionButton(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => const MovieScreen()),
+                  );
+                },
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                heroTag: "movie_fab",
+                child: const Icon(
+                  Icons.movie,
+                  size: 28,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: SafeArea(
