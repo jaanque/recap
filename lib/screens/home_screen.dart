@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/auth_service.dart';
 import 'login_screen.dart';
+import 'movie_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -146,6 +147,43 @@ class _HomeScreenState extends State<HomeScreen>
           ),
         ],
       ),
+      floatingActionButton: ScaleTransition(
+        scale: Tween<double>(
+          begin: 0.0,
+          end: 1.0,
+        ).animate(CurvedAnimation(
+          parent: _slideController,
+          curve: const Interval(0.8, 1.0, curve: Curves.elasticOut),
+        )),
+        child: Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.blue.withOpacity(0.4),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+                spreadRadius: -2,
+              ),
+            ],
+          ),
+          child: FloatingActionButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => const MovieScreen()),
+              );
+            },
+            backgroundColor: Colors.blue,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            child: const Icon(
+              Icons.movie,
+              size: 28,
+            ),
+          ),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: SafeArea(
         child: FutureBuilder<Map<String, dynamic>>(
           future: _getUserData(),
@@ -187,197 +225,145 @@ class _HomeScreenState extends State<HomeScreen>
             return Container(
               padding: const EdgeInsets.symmetric(horizontal: 32),
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Contenido principal centrado
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Icono de bienvenida con animación
-                        ScaleTransition(
-                          scale: Tween<double>(
-                            begin: 0.5,
-                            end: 1.0,
-                          ).animate(CurvedAnimation(
-                            parent: _scaleController,
-                            curve: Curves.elasticOut,
-                          )),
-                          child: Container(
-                            width: 120,
-                            height: 120,
-                            decoration: BoxDecoration(
-                              color: Colors.blue.withOpacity(0.1),
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.blue.withOpacity(0.3),
-                                  blurRadius: 40,
-                                  offset: const Offset(0, 15),
-                                  spreadRadius: -5,
-                                ),
-                              ],
-                            ),
-                            child: const Center(
-                              child: Text(
-                                '👋',
-                                style: TextStyle(fontSize: 50),
-                              ),
-                            ),
+                  // Icono de bienvenida con animación
+                  ScaleTransition(
+                    scale: Tween<double>(
+                      begin: 0.5,
+                      end: 1.0,
+                    ).animate(CurvedAnimation(
+                      parent: _scaleController,
+                      curve: Curves.elasticOut,
+                    )),
+                    child: Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.blue.withOpacity(0.3),
+                            blurRadius: 40,
+                            offset: const Offset(0, 15),
+                            spreadRadius: -5,
                           ),
+                        ],
+                      ),
+                      child: const Center(
+                        child: Text(
+                          '👋',
+                          style: TextStyle(fontSize: 50),
                         ),
-                        
-                        const SizedBox(height: 50),
-                        
-                        // Título de bienvenida
-                        SlideTransition(
-                          position: Tween<Offset>(
-                            begin: const Offset(0, 0.5),
-                            end: Offset.zero,
-                          ).animate(CurvedAnimation(
-                            parent: _slideController,
-                            curve: Curves.easeOutCubic,
-                          )),
-                          child: FadeTransition(
-                            opacity: _slideController,
-                            child: const Text(
-                              '¡Bienvenido de vuelta!',
-                              style: TextStyle(
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                                height: 1.2,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        ),
-                        
-                        const SizedBox(height: 20),
-                        
-                        // Nombre de usuario
-                        SlideTransition(
-                          position: Tween<Offset>(
-                            begin: const Offset(0, 0.3),
-                            end: Offset.zero,
-                          ).animate(CurvedAnimation(
-                            parent: _slideController,
-                            curve: const Interval(0.3, 1.0, curve: Curves.easeOutCubic),
-                          )),
-                          child: FadeTransition(
-                            opacity: Tween<double>(
-                              begin: 0.0,
-                              end: 1.0,
-                            ).animate(CurvedAnimation(
-                              parent: _slideController,
-                              curve: const Interval(0.3, 1.0, curve: Curves.easeOut),
-                            )),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 24,
-                                vertical: 16,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(16),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
-                                    blurRadius: 20,
-                                    offset: const Offset(0, 8),
-                                    spreadRadius: -5,
-                                  ),
-                                ],
-                              ),
-                              child: Text(
-                                'Hola, $displayName',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  color: Colors.grey[700],
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          ),
-                        ),
-                        
-                        const SizedBox(height: 40),
-                        
-                        // Descripción adicional
-                        SlideTransition(
-                          position: Tween<Offset>(
-                            begin: const Offset(0, 0.2),
-                            end: Offset.zero,
-                          ).animate(CurvedAnimation(
-                            parent: _slideController,
-                            curve: const Interval(0.5, 1.0, curve: Curves.easeOutCubic),
-                          )),
-                          child: FadeTransition(
-                            opacity: Tween<double>(
-                              begin: 0.0,
-                              end: 1.0,
-                            ).animate(CurvedAnimation(
-                              parent: _slideController,
-                              curve: const Interval(0.5, 1.0, curve: Curves.easeOut),
-                            )),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 20),
-                              child: Text(
-                                'Estás listo para conectar con personas increíbles de todo el mundo.',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.grey[600],
-                                  height: 1.5,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                   
-                  // Botón de cerrar sesión en la parte inferior
+                  const SizedBox(height: 50),
+                  
+                  // Título de bienvenida
                   SlideTransition(
                     position: Tween<Offset>(
-                      begin: const Offset(0, 1),
+                      begin: const Offset(0, 0.5),
                       end: Offset.zero,
                     ).animate(CurvedAnimation(
                       parent: _slideController,
-                      curve: const Interval(0.7, 1.0, curve: Curves.easeOutCubic),
+                      curve: Curves.easeOutCubic,
                     )),
-                    child: Container(
-                      padding: const EdgeInsets.only(bottom: 40),
-                      child: GestureDetector(
-                        onTap: _handleSignOut,
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          width: double.infinity,
-                          height: 56,
-                          decoration: BoxDecoration(
-                            color: Colors.black,
-                            borderRadius: BorderRadius.circular(28),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.4),
-                                blurRadius: 25,
-                                offset: const Offset(0, 12),
-                                spreadRadius: -5,
-                              ),
-                            ],
-                          ),
-                          child: const Center(
-                            child: Text(
-                              'Cerrar Sesión',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 0.5,
-                              ),
+                    child: FadeTransition(
+                      opacity: _slideController,
+                      child: const Text(
+                        '¡Bienvenido de vuelta!',
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                          height: 1.2,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 20),
+                  
+                  // Nombre de usuario
+                  SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0, 0.3),
+                      end: Offset.zero,
+                    ).animate(CurvedAnimation(
+                      parent: _slideController,
+                      curve: const Interval(0.3, 1.0, curve: Curves.easeOutCubic),
+                    )),
+                    child: FadeTransition(
+                      opacity: Tween<double>(
+                        begin: 0.0,
+                        end: 1.0,
+                      ).animate(CurvedAnimation(
+                        parent: _slideController,
+                        curve: const Interval(0.3, 1.0, curve: Curves.easeOut),
+                      )),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 16,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 20,
+                              offset: const Offset(0, 8),
+                              spreadRadius: -5,
                             ),
+                          ],
+                        ),
+                        child: Text(
+                          'Hola, $displayName',
+                          style: TextStyle(
+                            fontSize: 20,
+                            color: Colors.grey[700],
+                            fontWeight: FontWeight.w500,
                           ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 40),
+                  
+                  // Descripción adicional
+                  SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0, 0.2),
+                      end: Offset.zero,
+                    ).animate(CurvedAnimation(
+                      parent: _slideController,
+                      curve: const Interval(0.5, 1.0, curve: Curves.easeOutCubic),
+                    )),
+                    child: FadeTransition(
+                      opacity: Tween<double>(
+                        begin: 0.0,
+                        end: 1.0,
+                      ).animate(CurvedAnimation(
+                        parent: _slideController,
+                        curve: const Interval(0.5, 1.0, curve: Curves.easeOut),
+                      )),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Text(
+                          'Estás listo para conectar con personas increíbles de todo el mundo.',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[600],
+                            height: 1.5,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
                       ),
                     ),
