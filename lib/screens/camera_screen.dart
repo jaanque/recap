@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:async';
+import 'video_editor_screen.dart'; // Importar la nueva pantalla
 
 class CameraScreen extends StatefulWidget {
   const CameraScreen({super.key});
@@ -194,12 +195,13 @@ class _CameraScreenState extends State<CameraScreen> {
       
       print('Video guardado en: ${video.path}');
       
+      // Navegar al editor de video
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Video guardado exitosamente'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => VideoEditorScreen(
+              videoPath: video.path,
+            ),
           ),
         );
       }
