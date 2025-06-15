@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:recap/services/video_service.dart';
 import 'package:video_player/video_player.dart';
 import 'dart:io';
 import 'dart:async';
+// Importar el servicio de video que creamos
+// import 'services/video_service.dart'; // Ajusta la ruta según tu estructura
 
 class VideoEditorScreen extends StatefulWidget {
   final String videoPath;
@@ -21,6 +24,7 @@ class _VideoEditorScreenState extends State<VideoEditorScreen> {
   bool _isPlaying = false;
   bool _hasError = false;
   String _errorMessage = '';
+  bool _isUploading = false;
   
   // Variables para el selector de tiempo
   double _startTime = 0.0;
@@ -28,6 +32,10 @@ class _VideoEditorScreenState extends State<VideoEditorScreen> {
   double _currentPosition = 0.0;
   Duration _videoDuration = Duration.zero;
   Timer? _positionTimer;
+  
+  // Controladores para el formulario
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
   
   // Constantes
   static const double maxSelectionDuration = 5.0; // 5 segundos máximo
@@ -105,6 +113,8 @@ class _VideoEditorScreenState extends State<VideoEditorScreen> {
     _positionTimer?.cancel();
     _controller?.removeListener(_videoListener);
     _controller?.dispose();
+    _titleController.dispose();
+    _descriptionController.dispose();
     super.dispose();
   }
 
@@ -195,6 +205,78 @@ class _VideoEditorScreenState extends State<VideoEditorScreen> {
           aspectRatio: _controller!.value.aspectRatio,
           child: VideoPlayer(_controller!),
         ),
+      ),
+    );
+  }
+
+  Widget _buildVideoInfoForm() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[900],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Información del Video',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 16),
+          
+          // Campo título
+          TextField(
+            controller: _titleController,
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              labelText: 'Título *',
+              labelStyle: const TextStyle(color: Colors.white70),
+              hintText: 'Ingresa un título para tu video',
+              hintStyle: const TextStyle(color: Colors.white54),
+              filled: true,
+              fillColor: Colors.grey[800],
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Colors.blue, width: 2),
+              ),
+            ),
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // Campo descripción
+          TextField(
+            controller: _descriptionController,
+            style: const TextStyle(color: Colors.white),
+            maxLines: 3,
+            decoration: InputDecoration(
+              labelText: 'Descripción (opcional)',
+              labelStyle: const TextStyle(color: Colors.white70),
+              hintText: 'Describe tu video...',
+              hintStyle: const TextStyle(color: Colors.white54),
+              filled: true,
+              fillColor: Colors.grey[800],
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Colors.blue, width: 2),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -462,7 +544,7 @@ class _VideoEditorScreenState extends State<VideoEditorScreen> {
           // Botón cancelar
           Expanded(
             child: ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: _isUploading ? null : () => Navigator.of(context).pop(),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.grey[800],
                 foregroundColor: Colors.white,
@@ -480,16 +562,14 @@ class _VideoEditorScreenState extends State<VideoEditorScreen> {
           
           const SizedBox(width: 16),
           
-          // Botón confirmar
+          // Botón confirmar/subir
           Expanded(
             child: ElevatedButton(
-              onPressed: _selectionDuration <= maxSelectionDuration 
-                  ? () {
-                      // Aquí puedes agregar la lógica para procesar el video
-                      // Por ejemplo, recortar el video o devolver los tiempos seleccionados
-                      _confirmSelection();
-                    }
-                  : null,
+              onPressed: _isUploading || 
+                         _selectionDuration > maxSelectionDuration ||
+                         _titleController.text.trim().isEmpty
+                  ? null
+                  : _uploadVideo,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
                 foregroundColor: Colors.white,
@@ -498,10 +578,29 @@ class _VideoEditorScreenState extends State<VideoEditorScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text(
-                'Confirmar',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
+              child: _isUploading
+                  ? Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Subiendo...',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    )
+                  : const Text(
+                      'Subir Video',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    ),
             ),
           ),
         ],
@@ -509,24 +608,128 @@ class _VideoEditorScreenState extends State<VideoEditorScreen> {
     );
   }
 
-  void _confirmSelection() {
-    // Aquí puedes implementar la lógica para procesar el video
-    // Por ejemplo, usar ffmpeg para recortar el video o devolver los datos
-    
+  Future<void> _uploadVideo() async {
+    if (_titleController.text.trim().isEmpty) {
+      _showErrorDialog('Por favor, ingresa un título para el video');
+      return;
+    }
+
+    if (_selectionDuration > maxSelectionDuration) {
+      _showErrorDialog('La selección no puede exceder ${maxSelectionDuration.toInt()} segundos');
+      return;
+    }
+
+    setState(() {
+      _isUploading = true;
+    });
+
+    try {
+      // Pausar el video antes de subir
+      _pauseVideo();
+
+      final videoFile = File(widget.videoPath);
+      
+      // Aquí puedes agregar lógica para generar un thumbnail si lo deseas
+      // File? thumbnailFile = await _generateThumbnail();
+
+      final videoId = await VideoService.uploadVideo(
+        videoFile: videoFile,
+        title: _titleController.text.trim(),
+        description: _descriptionController.text.trim().isEmpty 
+            ? null 
+            : _descriptionController.text.trim(),
+        startTime: _startTime,
+        endTime: _endTime,
+        durationSeconds: _videoDuration.inSeconds.toDouble(),
+        // thumbnailFile: thumbnailFile,
+      );
+
+      // Marcar como listo una vez subido
+      await VideoService.updateVideoStatus(videoId, 'ready');
+
+      if (mounted) {
+        _showSuccessDialog(videoId);
+      }
+    } catch (e) {
+      print('Error subiendo video: $e');
+      if (mounted) {
+        _showErrorDialog('Error subiendo el video: ${e.toString()}');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploading = false;
+        });
+      }
+    }
+  }
+
+  void _showErrorDialog(String message) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.grey[900],
         title: const Text(
-          'Selección Confirmada',
+          'Error',
           style: TextStyle(color: Colors.white),
         ),
         content: Text(
-          'Video seleccionado:\n'
-          'Inicio: ${_formatTime(_startTime)}\n'
-          'Final: ${_formatTime(_endTime)}\n'
-          'Duración: ${_formatTime(_selectionDuration)}',
+          message,
           style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSuccessDialog(String videoId) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.grey[900],
+        title: const Text(
+          '¡Video Subido Exitosamente!',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(
+              Icons.check_circle,
+              color: Colors.green,
+              size: 48,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Tu video "${_titleController.text}" ha sido subido correctamente.',
+              style: const TextStyle(color: Colors.white70),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Título: ${_titleController.text}',
+              style: const TextStyle(color: Colors.white70, fontSize: 12),
+            ),
+            if (_descriptionController.text.trim().isNotEmpty)
+              Text(
+                'Descripción: ${_descriptionController.text}',
+                style: const TextStyle(color: Colors.white70, fontSize: 12),
+              ),
+            Text(
+              'Duración: ${_formatTime(_selectionDuration)}',
+              style: const TextStyle(color: Colors.white70, fontSize: 12),
+            ),
+            Text(
+              'ID: $videoId',
+              style: const TextStyle(color: Colors.white54, fontSize: 10),
+            ),
+          ],
         ),
         actions: [
           TextButton(
@@ -534,11 +737,17 @@ class _VideoEditorScreenState extends State<VideoEditorScreen> {
               Navigator.of(context).pop(); // Cerrar diálogo
               Navigator.of(context).pop(); // Volver a la pantalla anterior
             },
-            child: const Text('OK'),
+            child: const Text('Continuar'),
           ),
         ],
       ),
     );
+  }
+
+  bool get _canUpload {
+    return _titleController.text.trim().isNotEmpty &&
+           _selectionDuration <= maxSelectionDuration &&
+           !_isUploading;
   }
 
   @override
@@ -550,7 +759,7 @@ class _VideoEditorScreenState extends State<VideoEditorScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: _isUploading ? null : () => Navigator.of(context).pop(),
         ),
         title: const Text(
           'Editor de Video',
@@ -589,6 +798,11 @@ class _VideoEditorScreenState extends State<VideoEditorScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        const SizedBox(height: 20),
+                        
+                        // Formulario de información del video
+                        _buildVideoInfoForm(),
+                        
                         const SizedBox(height: 20),
                         
                         // Reproductor de video
